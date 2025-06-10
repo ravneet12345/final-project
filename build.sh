@@ -1,3 +1,3 @@
-#!/bin/bash 
-docker build -t react-ecommerce-app:latest .
+#!/bin/bash
+docker build -t react-app .
 
