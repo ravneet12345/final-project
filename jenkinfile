@@ -1,46 +1,29 @@
 pipeline {
     agent any
-
     environment {
-        // Update these to match your DockerHub details
-        DEV_IMAGE = 'ravneeth123/reactjs-ecommerce-dev'
-        PROD_IMAGE = 'ravneeth123/reactjs-ecommerce-prod'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-id')
     }
-
     stages {
-       stage('Build Docker Image') {
+        stage('Clone') {
+            steps {
+                git branch: 'dev', url: 'https://github.com/sriram-R-krishnan/devops-build'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh './build.sh'
+            }
+        }
+        stage('Push to Docker Hub') {
             steps {
                 script {
-                    def branch = env.GIT_BRANCH?.replaceAll("origin/", "")
-                    if (branch == 'dev') {
-                        sh "docker build -t ${DEV_IMAGE}:latest ."
-                    } else if (branch == 'master') {
-                        sh "docker build -t ${PROD_IMAGE}:latest ."
-                    }
+                    def branch = env.BRANCH_NAME
+                    def repo = branch == 'master' ? 'prod' : 'dev'
+                    sh "docker tag react-app your-dockerhub-username/${repo}:latest"
+                    sh "docker login -u ravneeth123 -p ${DOCKERHUB_CREDENTIALS_PSW}"
+                    sh "docker push ravneeth123/${repo}:latest"
                 }
-            }
-        }
-
-        stage('Push to DockerHub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    script {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                        def branch = env.GIT_BRANCH?.replaceAll("origin/", "")
-                        if (branch == 'dev') {
-                            sh "docker push ${DEV_IMAGE}:latest"
-                        } else if (branch == 'master') {
-                            sh "docker push ${PROD_IMAGE}:latest"
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Post-Build Cleanup') {
-            steps {
-                sh 'docker system prune -f'
             }
         }
     }
-} m
+}
