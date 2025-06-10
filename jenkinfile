@@ -19,7 +19,7 @@ pipeline {
                 script {
                     def branch = env.BRANCH_NAME
                     def repo = branch == 'master' ? 'prod' : 'dev'
-                    sh "docker tag react-app your-dockerhub-username/${repo}:latest"
+                    sh "docker tag react-app ravneeth123/${repo}:latest"
                     sh "docker login -u ravneeth123 -p ${DOCKERHUB_CREDENTIALS_PSW}"
                     sh "docker push ravneeth123/${repo}:latest"
                 }
