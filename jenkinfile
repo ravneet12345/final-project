@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+
+    environment {
+        // Update these to match your DockerHub details
+        DEV_IMAGE = 'ravneeth123/reactjs-ecommerce-dev'
+        PROD_IMAGE = 'ravneeth123/reactjs-ecommerce-prod'
+    }
+
+    stages {
+       stage('Build Docker Image') {
+            steps {
+                script {
+                    def branch = env.GIT_BRANCH?.replaceAll("origin/", "")
+                    if (branch == 'dev') {
+                        sh "docker build -t ${DEV_IMAGE}:latest ."
+                    } else if (branch == 'master') {
+                        sh "docker build -t ${PROD_IMAGE}:latest ."
+                    }
+                }
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    script {
+                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                        def branch = env.GIT_BRANCH?.replaceAll("origin/", "")
+                        if (branch == 'dev') {
+                            sh "docker push ${DEV_IMAGE}:latest"
+                        } else if (branch == 'master') {
+                            sh "docker push ${PROD_IMAGE}:latest"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Post-Build Cleanup') {
+            steps {
+                sh 'docker system prune -f'
+            }
+        }
+    }
+} m
