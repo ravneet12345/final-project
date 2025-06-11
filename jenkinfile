@@ -1,1 +1,34 @@
+pipeline {
+  agent any
+
+  environment {
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+    REPO = 'yourusername'
+  }
+
+  stages {
+    stage('Clone') {
+      steps {
+        git branch: "${env.BRANCH_NAME}", url: 'https://github.com/ravneet12345/final.git'
+      }
+    }
+
+    stage('Build Image') {
+      steps {
+        script {
+          def imageTag = env.BRANCH_NAME == 'master' ? 'prod' : 'dev'
+          sh """
+            docker build -t ${REPO}/${imageTag}-app:latest .
+            echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
+            docker push ${REPO}/${imageTag}-app:latest
+          """
+        }
+      }
+    }
+  }
+
+  triggers {
+    githubPush()
+  }
+}
 
