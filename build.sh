@@ -1,3 +1,4 @@
 #!/bin/bash
-docker build -t react-app .
+docker build -t ravneeth123/dev-react-app:latest .
+
 
