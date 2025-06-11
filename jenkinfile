@@ -2,33 +2,55 @@ pipeline {
   agent any
 
   environment {
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-    REPO = 'yourusername'
-  }
-
-  stages {
-    stage('Clone') {
-      steps {
-        git branch: "${env.BRANCH_NAME}", url: 'https://github.com/ravneet12345/final-project.git'
-      }
-    }
-
-    stage('Build Image') {
-      steps {
-        script {
-          def imageTag = env.BRANCH_NAME == 'master' ? 'prod' : 'dev'
-          sh """
-            docker build -t ${REPO}/${imageTag}-app:latest .
-            echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
-            docker push ${REPO}/${imageTag}-app:latest
-          """
-        }
-      }
-    }
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Set this in Jenkins credentials
+    IMAGE_NAME = "ravneet12345/react-ecommerce"
   }
 
   triggers {
-    githubPush()
+    githubPush() // Auto-trigger on GitHub push
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'dev', url: 'https://github.com/ravneet12345/devops-build.git'
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        sh 'docker build -t $IMAGE_NAME:dev .'
+      }
+    }
+
+    stage('Push Docker Image to DockerHub') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'dockerhub-creds', 
+          usernameVariable: 'USERNAME', 
+          passwordVariable: 'PASSWORD'
+        )]) {
+          sh '''
+            echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+            docker push $IMAGE_NAME:dev
+          '''
+        }
+      }
+    }
+
+    stage('Deploy (Optional)') {
+      steps {
+        echo 'Add deployment logic here (e.g., SSH to EC2 and run deploy.sh)'
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "🎉 Build and push successful!"
+    }
+    failure {
+      echo "❌ Build failed. Please check logs."
+    }
   }
 }
-
