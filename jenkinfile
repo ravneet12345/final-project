@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Clone') {
       steps {
-        git branch: "${env.BRANCH_NAME}", url: 'https://github.com/ravneet12345/final.git'
+        git branch: "${env.BRANCH_NAME}", url: 'https://github.com/ravneet12345/final-project.git'
       }
     }
 
