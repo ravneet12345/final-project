@@ -50,7 +50,7 @@ pipeline {
         stage('Tag & Push Image') {
             steps {
                 script {
-                    def repo = (params.BRANCH_NAME == 'dev' || params.BRANCH_NAME == 'prod') ? 'react-app-prod' : 'react-app-dev'
+                    def repo = (params.BRANCH_NAME == 'dev' || params.BRANCH_NAME == 'prod') ? 'react-app-dev' : 'react-app-prod'
                     def imageTag = "${DOCKERHUB_USERNAME}/${repo}:latest"
 
                     sh "docker tag ${IMAGE_NAME} ${imageTag}"
