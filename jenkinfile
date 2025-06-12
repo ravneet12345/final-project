@@ -14,9 +14,15 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: "${env.BRANCH_NAME}", url: 'https://github.com/ravneet12345/final-project.git'
-            }
-        }
+                checkout([$class: 'GitSCM',
+                    branches: [[name: "${env.BRANCH_NAME}"]],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/ravneet12345/final-project.git',
+                        credentialsId: 'github'
+            ]]
+        ])
+    }
+}
 
         stage('Build Docker Image') {
             steps {
