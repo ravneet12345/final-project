@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = 'ravneeth123'
-        IMAGE_NAME = 'react-app'
+        IMAGE_NAME = 'react-ecommerce-app'
         DOCKERHUB_CREDENTIALS_ID = 'docker'  // Jenkins credential ID
         GIT_CREDENTIALS_ID = 'github'
     }
