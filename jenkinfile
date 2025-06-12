@@ -33,6 +33,7 @@ pipeline {
                 script {
                     sh 'chmod +x ./build.sh'
                     sh './build.sh'  // Assumes this script builds a Docker image named react-app
+                    sh 'docker images'
                 }
             }
         }
