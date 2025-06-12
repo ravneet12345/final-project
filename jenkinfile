@@ -1,56 +1,55 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Set this in Jenkins credentials
-    IMAGE_NAME = "ravneet12345/react-ecommerce"
-  }
-
-  triggers {
-    githubPush() // Auto-trigger on GitHub push
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'dev', url: 'https://github.com/ravneet12345/devops-build.git'
-      }
+    environment {
+        DOCKERHUB_USERNAME = 'ravneeth123'
+        IMAGE_NAME = 'react-app'
+        DOCKERHUB_CREDENTIALS_ID = 'docker'  // Jenkins credential ID
     }
 
-    stage('Build Docker Image') {
-      steps {
-        sh 'docker build -t $IMAGE_NAME:dev .'
-      }
+    options {
+        skipStagesAfterUnstable()
     }
 
-    stage('Push Docker Image to DockerHub') {
-      steps {
-        withCredentials([usernamePassword(
-          credentialsId: 'dockerhub-creds', 
-          usernameVariable: 'USERNAME', 
-          passwordVariable: 'PASSWORD'
-        )]) {
-          sh '''
-            echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
-            docker push $IMAGE_NAME:dev
-          '''
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: "${env.BRANCH_NAME}", url: 'https://github.com/ravneet12345/final-project.git'
+            }
         }
-      }
-    }
 
-    stage('Deploy (Optional)') {
-      steps {
-        echo 'Add deployment logic here (e.g., SSH to EC2 and run deploy.sh)'
-      }
-    }
-  }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh './build.sh'
+                }
+            }
+        }
 
-  post {
-    success {
-      echo "🎉 Build and push successful!"
-    }
-    failure {
-      echo "❌ Build failed. Please check logs."
-    }
-  }
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS_ID) {
+                        echo "Logged in to Docker Hub"
+                    }
+                }
+            }
+        }
+
+        stage('Tag & Push Image') {
+            steps {
+                script {
+                    def repo = (env.BRANCH_NAME == 'master') ? 'prod' : 'dev'
+                    def imageTag = "${DOCKERHUB_USERNAME}/${repo}:latest"
+
+                    sh "docker tag ${IMAGE_NAME} ${imageTag}"
+
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS_ID) {
+                        sh "docker push ${imageTag}"
+                    }
+                }
+            }
+        }
 }
+
+
