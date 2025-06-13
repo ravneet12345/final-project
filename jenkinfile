@@ -41,7 +41,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'ls -l'
+                    sh 'ls -l build'
                     sh 'chmod +x ./build.sh'
                     sh './build.sh'
                     sh 'chmod 400 demo-b15.pem'
