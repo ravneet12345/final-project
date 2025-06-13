@@ -7,26 +7,23 @@ pipeline {
         DOCKERHUB_CREDENTIALS_ID = 'docker'  // Jenkins credential ID
         GIT_CREDENTIALS_ID = 'github'
     }
-    parameters {
-        string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Git branch to build')
+    options {
+        skipStagesAfterUnstable()
     }
 
     stages {
-
         stage('Checkout') {
-            steps {
-                script {
-                    def branch = params.BRANCH_NAME ?: 'main'
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: "*/${branch}"]],
-                        userRemoteConfigs: [[
-                            url: 'https://github.com/ravneet12345/devops-build.git',
-                            credentialsId: "${GIT_CREDENTIALS_ID}"
-                        ]]
-                    ])
-                }
-            }
-        }
+	steps {
+        checkout([$class: 'GitSCM',
+            branches: [[name: "${env.BRANCH_NAME}"]],
+            userRemoteConfigs: [[
+                url: 'https://github.com/ravneet12345/devops-build.git',
+                credentialsId: 'github'
+            ]]
+        ])
+    }
+}
+
 
         stage('Build Docker Image') {
             steps {
@@ -65,13 +62,13 @@ pipeline {
         stage('Trigger Webhook (optional)') {
             when {
                 anyOf {
-                    branch 'main'
-                    branch 'master'
+                    branch 'dev'
+                    branch 'prod'
                 }
             }
             steps {
                 script {
-                    def webhookUrl = 'https://your-webhook-url.com/deploy'  // 🔁 Replace with your actual webhook
+                    def webhookUrl = 'http://52.91.58.104:8080/github-webhook/'  // 🔁 Replace with your actual webhook
                     sh """
                         curl -X POST ${webhookUrl} \\
                         -H 'Content-Type: application/json' \\
