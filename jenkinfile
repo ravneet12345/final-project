@@ -4,12 +4,11 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = 'ravneeth123'
         IMAGE_NAME = 'react-ecommerce-app'
-        DOCKERHUB_CREDENTIALS_ID = 'docker'         // Jenkins credential ID for Docker Hub
-        GIT_CREDENTIALS_ID = 'github'               // Jenkins credential ID for GitHub
-        DEPLOY_SERVER = 'ubuntu@your-server-ip'     // Replace with your actual SSH user@host
-        SSH_KEY_ID = 'ssh-key'                      // Jenkins SSH credentials ID
+        DOCKERHUB_CREDENTIALS_ID = 'docker' // Jenkins credential ID for Docker Hub
+        GIT_CREDENTIALS_ID = 'github' // Jenkins credential ID for GitHub
+        DEV_SERVER = 'ec2-user@54.243.12.90' // Replace with your dev server
+        PROD_SERVER = 'ec2-user@54.172.195.154' // Replace with your prod server
     }
-
     options {
         skipStagesAfterUnstable()
     }
@@ -44,6 +43,7 @@ pipeline {
                 script {
                     sh 'chmod +x build.sh'
                     sh './build.sh'
+                    sh 'chmod 400 demo-b15.pem'
                 }
             }
         }
@@ -66,21 +66,22 @@ pipeline {
 
         stage('Deploy to Server') {
             steps {
-                sshagent (credentials: [SSH_KEY_ID]) {
-                    script {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} << EOF
-                                docker pull ${env.IMAGE_TAG}
-                                docker stop ${IMAGE_NAME} || true
-                                docker rm ${IMAGE_NAME} || true
-                                docker run -d --name ${IMAGE_NAME} -p 80:80 ${env.IMAGE_TAG}
-                            EOF
-                        """
-                    }
+                script {
+                    def repo = (params.BRANCH_NAME == 'prod') ? 'react-app-prod' : 'react-app-dev'
+                    def imageTag = "${DOCKERHUB_USERNAME}/${repo}:latest"
+                    def targetServer = (params.BRANCH_NAME == 'prod') ? PROD_SERVER : DEV_SERVER
+
+                    sh """
+                        ssh -i demo-b15.pem -o StrictHostKeyChecking=no ${targetServer} '
+                            docker pull ${imageTag} &&
+                            docker stop ${repo} || true &&
+                            docker rm ${repo} || true &&
+                            docker run -d --name ${repo} -p 80:80 ${imageTag}
+                        '
+                    """
                 }
             }
         }
-    }
 
     post {
         success {
