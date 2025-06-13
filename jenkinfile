@@ -15,6 +15,18 @@ pipeline {
     }
 
     stages {
+        stage('Detect Branch') {
+            steps {
+                script {
+                    // This will give you something like "origin/dev"
+                    def rawBranch = env.GIT_BRANCH ?: sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    // Extract actual branch name
+                    BRANCH = rawBranch.replaceAll(/^origin\\//, '').trim()
+                    echo "Building for branch: ${BRANCH}"
+                    env.ACTUAL_BRANCH = BRANCH // store for later stages
+                }
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
