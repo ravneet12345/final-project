@@ -18,7 +18,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: "${env.BRANCH_NAME}"]],
+                    branches: [[name: "*/${env.ACTUAL_BRANCH}"]],
                     userRemoteConfigs: [[
                         url: 'https://github.com/ravneet12345/devops-build.git',
                         credentialsId: "${GIT_CREDENTIALS_ID}"
