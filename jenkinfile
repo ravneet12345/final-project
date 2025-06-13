@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USERNAME = 'ravneeth123'
+        IMAGE_NAME = 'react-ecommerce-app'
+        DOCKERHUB_CREDENTIALS_ID = 'docker'
+        GIT_CREDENTIALS_ID = 'github'
+    }
+
+    options {
+        skipStagesAfterUnstable()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    def branch = env.BRANCH_NAME ?: 'main'
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: branch]],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/ravneet12345/devops-build.git',
+                            credentialsId: GIT_CREDENTIALS_ID
+                        ]]
+                    ])
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'ls -l'
+                    sh 'chmod +x ./build.sh'
+                    sh './build.sh'
+                    sh 'docker images'
+                }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS_ID) {
+                        echo "Logged into Docker Hub"
+                    }
+                }
+            }
+        }
+
+        stage('Tag & Push Image') {
+            steps {
+                script {
+                    def branch = env.BRANCH_NAME ?: 'main'
+                    def repo = (branch == 'dev' || branch == 'prod') ? 'react-app-dev' : 'react-app-prod'
+                    def imageTag = "${DOCKERHUB_USERNAME}/${repo}:latest"
+
+                    sh "docker tag ${IMAGE_NAME} ${imageTag}"
+                    docker.withRegistry('', DOCKERHUB_CREDENTIALS_ID) {
+                        sh "docker push ${imageTag}"
+                    }
+                }
+            }
+        }
+
+        stage('Trigger Webhook (optional)') {
+            when {
+                anyOf {
+                    branch 'dev'
+                    branch 'prod'
+                }
+            }
+            steps {
+                script {
+                    def webhookUrl = 'http://52.91.58.104:8080/github-webhook/'
+                    def branch = env.BRANCH_NAME ?: 'main'
+                    sh """
+                        curl -X POST ${webhookUrl} \
+                        -H 'Content-Type: application/json' \
+                        -d '{"status":"success","branch":"${branch}"}'
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pip"
+}
+}
+}
