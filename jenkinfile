@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     sh 'ls -l'
-                    sh 'chmod +x build.sh'
+                    sh 'chmod +x ./build.sh'
                     sh './build.sh'
                     sh 'docker images'
                 }
