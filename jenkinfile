@@ -82,14 +82,4 @@ pipeline {
                 }
             }
         }
-
-    post {
-        success {
-            echo "✅ Build and deployment successful for branch: ${env.BRANCH_NAME}"
-        }
-        failure {
-            echo "❌ Pipeline failed on branch: ${env.BRANCH_NAME}"
-        }
-    }
-}
 }
