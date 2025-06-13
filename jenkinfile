@@ -4,32 +4,35 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = 'ravneeth123'
         IMAGE_NAME = 'react-ecommerce-app'
-        DOCKERHUB_CREDENTIALS_ID = 'docker'  // Jenkins credential ID
+        DOCKERHUB_CREDENTIALS_ID = 'docker'
         GIT_CREDENTIALS_ID = 'github'
     }
+
     options {
         skipStagesAfterUnstable()
     }
 
     stages {
         stage('Checkout') {
-	steps {
-        checkout([$class: 'GitSCM',
-            branches: [[name: "${env.BRANCH_NAME}"]],
-            userRemoteConfigs: [[
-                url: 'https://github.com/ravneet12345/devops-build.git',
-                credentialsId: 'github'
-            ]]
-        ])
-    }
-}
-
+            steps {
+                script {
+                    def branch = env.BRANCH_NAME ?: 'main'
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: branch]],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/ravneet12345/devops-build.git',
+                            credentialsId: GIT_CREDENTIALS_ID
+                        ]]
+                    ])
+                }
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
                 script {
                     sh 'chmod +x build.sh'
-                    sh 'build.sh'  // Assumes this script builds a Docker image named react-app
+                    sh './build.sh'
                     sh 'docker images'
                 }
             }
@@ -48,7 +51,8 @@ pipeline {
         stage('Tag & Push Image') {
             steps {
                 script {
-                    def repo = (params.BRANCH_NAME == 'dev' || params.BRANCH_NAME == 'prod') ? 'react-app-dev' : 'react-app-prod'
+                    def branch = env.BRANCH_NAME ?: 'main'
+                    def repo = (branch == 'dev' || branch == 'prod') ? 'react-app-dev' : 'react-app-prod'
                     def imageTag = "${DOCKERHUB_USERNAME}/${repo}:latest"
 
                     sh "docker tag ${IMAGE_NAME} ${imageTag}"
@@ -68,11 +72,12 @@ pipeline {
             }
             steps {
                 script {
-                    def webhookUrl = 'http://52.91.58.104:8080/github-webhook/'  // 🔁 Replace with your actual webhook
+                    def webhookUrl = 'http://52.91.58.104:8080/github-webhook/'
+                    def branch = env.BRANCH_NAME ?: 'main'
                     sh """
-                        curl -X POST ${webhookUrl} \\
-                        -H 'Content-Type: application/json' \\
-                        -d '{"status":"success","branch":"${params.BRANCH_NAME}"}'
+                        curl -X POST ${webhookUrl} \
+                        -H 'Content-Type: application/json' \
+                        -d '{"status":"success","branch":"${branch}"}'
                     """
                 }
             }
@@ -84,7 +89,4 @@ pipeline {
             echo "✅ Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed."
-        }
-    }
-}
+            echo "❌ Pip
