@@ -16,7 +16,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    def branch = env.BRANCH_NAME ?: 'main'
+                    def branch = env.BRANCH_NAME ?: 'dev'
                     checkout([$class: 'GitSCM',
                         branches: [[name: branch]],
                         userRemoteConfigs: [[
