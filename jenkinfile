@@ -42,8 +42,9 @@ pipeline {
             steps {
                 script {
                     sh 'ls -l'
-                    sh 'chmod +x build.sh'
-                    sh './build.sh'
+                    sh 'cd build'
+                    sh 'chmod +x ../../build.sh'
+                    sh '../../build.sh'
                     sh 'chmod 400 demo-b15.pem'
                 }
             }
