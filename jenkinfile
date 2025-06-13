@@ -49,20 +49,21 @@ pipeline {
             }
         }
 
-        stage('Tag & Push Image') {
+        stage('Tag & Push Docker Image') {
             steps {
                 script {
-                    def branch = env.BRANCH_NAME ?: 'main'
-                    def repo = (branch == 'dev' || branch == 'prod') ? 'react-app-dev' : 'react-app-prod'
-                    def imageTag = "${DOCKERHUB_USERNAME}/${repo}:latest"
+                    def repoName = (env.BRANCH_NAME == 'dev') ? 'react-app-dev' : 'react-app-prod'
+                    def fullImageName = "${DOCKERHUB_USERNAME}/${repoName}:latest"
+                    
+                    sh "docker tag ${IMAGE_NAME} ${fullImageName}"
 
-                    sh "docker tag ${IMAGE_NAME} ${imageTag}"
                     docker.withRegistry('', DOCKERHUB_CREDENTIALS_ID) {
-                        sh "docker push ${imageTag}"
+                        sh "docker push ${fullImageName}"
                     }
                 }
             }
         }
+    }
 
         stage('Trigger Webhook (optional)') {
             when {
